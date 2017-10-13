@@ -1,0 +1,3 @@
+export const SET_MOVINGLIST = 'SET_MOVINGLIST'
+export const SET_TOPLIST = 'SET_TOPLIST'
+export const SET_TOPSTART = 'SET_TOPSTART'
