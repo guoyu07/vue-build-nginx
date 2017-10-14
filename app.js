@@ -1,46 +1,25 @@
-var PORT = 3899//
+const express = require('express')
+const proxy = require('http-proxy-middleware')// 引入代理中间件
+const app = express()
 
-var http = require('http')
-var url = require('url')
-var fs = require('fs')
-var mine = require('./mine').types//
-var path = require('path')
+app.use(express.static('dist'))
+// app.use(express.static('client'));
 
-var server = http.createServer(function (request, response) {
-  var pathname = url.parse(request.url).pathname
-    if (pathname == '/') {
-      pathname = '/index.html'
-    }
-  var realPath = path.join('dist', pathname)    //这里设置自己的文件名称;
+// Add middleware for http proxying
+const apiProxy = proxy('/api', {
+  target: 'http://api.douban.com/v2',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api': ''
+  }
+})// 将服务器代理到localhost:8080端口上[本地服务器为localhost:3000]
+app.use('/api/*', apiProxy)// api子目录下的都是用代理
 
-    var ext = path.extname(realPath)
-    ext = ext ? ext.slice(1) : 'unknown'
-    fs.exists(realPath, function (exists) {
-      if (!exists) {
-          response.writeHead(404, {
-              'Content-Type': 'text/plain'
-            })
-
-            response.write('This request URL ' + pathname + ' was not found on this server.')
-            response.end()
-        } else {
-          fs.readFile(realPath, 'binary', function (err, file) {
-              if (err) {
-                  response.writeHead(500, {
-                      'Content-Type': 'text/plain'
-                    })
-                    response.end(err)
-                } else {
-                  var contentType = mine[ext] || 'text/plain';
-                  response.writeHead(200, {
-                      'Content-Type': contentType
-                    })
-                    response.write(file, 'binary')
-                    response.end()
-                }
-            })
-        }
-    })
+// Render your site
+app.get('/index.html', function (req, res) {
+  res.sendFile(__dirname + '/index.html')
 })
-server.listen(PORT)
-console.log('Server runing at port: ' + PORT + '.')
+
+app.listen(3899, () => {
+  console.log('Listening on: http://localhost:3000')
+})
